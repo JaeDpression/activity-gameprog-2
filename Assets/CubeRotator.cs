@@ -11,36 +11,39 @@ public class CubeRotator : MonoBehaviour
     public float rotationSpeed = 100f;
     public float rotationDuration = 3f;
 
+    private bool isCube1Rotating = true;
+    private bool isCube2Rotating = true;
+    private bool isCube3Rotating = true;
+
     private void Start()
     {
-        StartCoroutine(RotateCubes());
+        // Start spinning all cubes at the same time
+        StartRotation(cube1, () => isCube1Rotating);
+        StartRotation(cube2, () => isCube2Rotating);
+        StartRotation(cube3, () => isCube3Rotating);
+
+        // Stop them one by one
+        StartCoroutine(StopCubesOneByOne());
     }
 
-    private IEnumerator RotateCubes()
+    private async void StartRotation(GameObject cube, System.Func<bool> isRotating)
     {
-        Task rotateTask1 = RotateCubeAsync(cube1);
-        Task rotateTask2 = RotateCubeAsync(cube2);
-        Task rotateTask3 = RotateCubeAsync(cube3);
-
-        yield return new WaitForSeconds(rotationDuration);
-        rotateTask1.Wait();
-
-        yield return new WaitForSeconds(rotationDuration);
-        rotateTask2.Wait();
-
-        yield return new WaitForSeconds(rotationDuration);
-        rotateTask3.Wait();
-    }
-
-    private async Task RotateCubeAsync(GameObject cube)
-    {
-        float elapsedTime = 0f;
-
-        while (elapsedTime < rotationDuration * 3)
+        while (isRotating())
         {
             cube.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
-            elapsedTime += Time.deltaTime;
-            await Task.Yield();
+            await Task.Yield(); // Keeps it non-blocking
         }
+    }
+
+    private IEnumerator StopCubesOneByOne()
+    {
+        yield return new WaitForSeconds(rotationDuration);
+        isCube1Rotating = false; // Stops Cube1
+
+        yield return new WaitForSeconds(rotationDuration);
+        isCube2Rotating = false; // Stops Cube2
+
+        yield return new WaitForSeconds(rotationDuration);
+        isCube3Rotating = false; // Stops Cube3
     }
 }
